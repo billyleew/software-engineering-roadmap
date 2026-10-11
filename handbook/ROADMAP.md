@@ -343,3 +343,13 @@ The capstone must include:
 - Technical strategy and CTO-level decision log
 
 The final measure of progress is not the number of books, courses or technologies completed. It is the quality of the decisions that can be made, explained, implemented, operated and revised.
+
+---
+
+## Continuous Learning Intelligence — research to practice
+
+The six tracks are supported by an evidence-driven AI-assisted research loop: **discover -> attribute -> verify -> connect to roadmap -> propose study/lab -> human approval -> implement -> measure -> reflect**.
+
+Start with [Engineering Learning Intelligence](./learning-intelligence/README.md), follow the [study loop and reusable AI prompts](./learning-intelligence/learning-loop-and-prompts.md), and implement the [incremental MVP plan](./learning-intelligence/mvp-plan.md).
+
+Source content is untrusted data; preserve provenance, respect source access/rights, and require human approval before code, deployment, spending or production changes. Success is demonstrated understanding and completed reproducible experiments, not article volume.
