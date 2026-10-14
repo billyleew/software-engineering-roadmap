@@ -60,3 +60,16 @@ Tests use an in-memory feed fixture and temporary SQLite databases, so they do n
 ## Next slice
 
 Verify publisher feeds, add a curated source registry and topic relevance scoring, then introduce an optional source-grounded LLM adapter with evaluation fixtures and explicit human approval. See [MVP plan](../handbook/learning-intelligence/mvp-plan.md).
+
+## First useful learning digest
+
+After importing a few source links, generate a prioritized Markdown review queue:
+
+```bash
+eli digest --limit 10
+eli digest --limit 10 --output output/weekly-review.md
+```
+
+This first classifier is **deterministic** and matches title keywords against seven roadmap tracks; it explains topic matches and flags unmatched titles for manual triage. It is intentionally not an AI model and does not verify article claims. Review original sources before deciding to study or build a PoC. No scheduling or background access is enabled yet.
+
+**First study habit:** Spend 20 minutes on discovery (5 minutes finding one item, 10 minutes understanding it, 5 minutes questioning assumptions). Reserve a separate lab session to implement, break, measure and document the idea.
