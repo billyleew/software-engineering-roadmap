@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 from .core import connect, ingest_feed, list_items, store
+from .learning import recommendations, markdown_digest
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="eli", description="Engineering Learning Intelligence v1")
@@ -21,6 +22,9 @@ def main(argv=None) -> int:
     feed.add_argument("--source", required=True)
     listing = commands.add_parser("list", help="List imported items")
     listing.add_argument("--limit", type=int, default=30)
+    digest = commands.add_parser("digest", help="Generate a Markdown study review queue")
+    digest.add_argument("--limit", type=int, default=20)
+    digest.add_argument("--output", help="Write Markdown to this file instead of stdout")
     args = parser.parse_args(argv)
     try:
         path = Path(args.db)
@@ -30,9 +34,20 @@ def main(argv=None) -> int:
                 result = {"added": store(db, url=args.url, title=args.title, source=args.source)}
             elif args.command == "fetch":
                 result = ingest_feed(db, args.url, source=args.source)
+            elif args.command == "digest":
+                result = markdown_digest(recommendations(db, args.limit))
             else:
                 result = list_items(db, args.limit)
-        print(json.dumps(result, indent=2, ensure_ascii=False))
+        if args.command == "digest":
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(result, encoding="utf-8")
+                print(f"Wrote {output}")
+            else:
+                print(result)
+        else:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
     except (ValueError, OSError, RuntimeError) as exc:
         print(f"eli: {exc}", file=sys.stderr)
