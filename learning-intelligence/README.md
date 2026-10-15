@@ -73,3 +73,38 @@ eli digest --limit 10 --output output/weekly-review.md
 This first classifier is **deterministic** and matches title keywords against seven roadmap tracks; it explains topic matches and flags unmatched titles for manual triage. It is intentionally not an AI model and does not verify article claims. Review original sources before deciding to study or build a PoC. No scheduling or background access is enabled yet.
 
 **First study habit:** Spend 20 minutes on discovery (5 minutes finding one item, 10 minutes understanding it, 5 minutes questioning assumptions). Reserve a separate lab session to implement, break, measure and document the idea.
+
+## Version 1.1 — Curated multi-source ingestion
+
+From `learning-intelligence/` after `pip install -e '.[test]'`:
+
+```bash
+eli sources
+eli fetch-all
+eli list --limit 20
+eli digest --limit 10 --output output/weekly-review.md
+python -m pytest -q
+```
+
+The checked-in `config/sources.example.json` is **opt-in**: publisher RSS endpoints are *unverified candidates*, so `enabled` and `access_reviewed` are initially false. Thus `eli fetch-all` initially reports skipped sources, not newly imported articles. This is expected.
+
+To activate a source, first confirm its current official RSS/Atom URL, access terms and rate limits. Copy the example to `config/sources.local.json`, update the URL, set `access_reviewed: true` and `enabled: true`, then:
+
+```bash
+eli sources --sources config/sources.local.json
+eli fetch-all --sources config/sources.local.json
+```
+
+Keep local registry modifications out of version control if they contain personal information. `fetch-all` continues past a failing feed, reports per-source results, deduplicates across feeds and introduces a short delay between enabled sources. It does not scrape articles or LinkedIn. The metadata classifier still needs human review; no LLM is called.
+
+**Security limitation:** DNS checks occur before the HTTP connection, so this is a local trusted-user tool, not a hardened publicly exposed fetch service. Do not use it for arbitrary URLs from untrusted users without network egress enforcement.
+
+### V1.1 validation checklist
+
+- `python -m pytest -q` passes, including partial-failure and repeat-ingestion tests.
+- `eli sources` lists registry entries with expected opt-in states.
+- `eli fetch-all` with default registry safely skips unreviewed sources.
+- A reviewed, permitted live feed imports real metadata; rerun yields duplicates, not new rows.
+- `eli digest` includes newly ingested topics.
+
+Live feed availability and GitHub Actions results must be verified independently; the code commit alone does not prove successful external ingestion.
