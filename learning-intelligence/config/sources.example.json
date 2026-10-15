@@ -1,0 +1,52 @@
+{
+  "sources": [
+    {
+      "id": "thoughtworks",
+      "name": "Thoughtworks",
+      "mode": "rss",
+      "enabled": false,
+      "access_reviewed": false,
+      "feed_url": "https://www.thoughtworks.com/rss/insights.xml",
+      "note": "Candidate feed URL only; confirm publisher endpoint and permitted access before enabling."
+    },
+    {
+      "id": "infoq",
+      "name": "InfoQ",
+      "mode": "rss",
+      "enabled": false,
+      "access_reviewed": false,
+      "feed_url": "https://feed.infoq.com/",
+      "note": "Candidate feed URL only; confirm publisher endpoint and permitted access before enabling."
+    },
+    {
+      "id": "dzone",
+      "name": "DZone",
+      "mode": "rss",
+      "enabled": false,
+      "access_reviewed": false,
+      "feed_url": "https://dzone.com/feed",
+      "note": "Candidate feed URL only; confirm publisher endpoint and permitted access before enabling."
+    },
+    {
+      "id": "akita",
+      "name": "Fabio Akita",
+      "mode": "manual",
+      "enabled": false,
+      "note": "Use add-url until an official, permitted feed is verified."
+    },
+    {
+      "id": "deschamps",
+      "name": "Filipe Deschamps",
+      "mode": "manual",
+      "enabled": false,
+      "note": "Use add-url until an official, permitted feed is verified."
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn shared posts",
+      "mode": "manual",
+      "enabled": false,
+      "note": "No authenticated-feed scraping; manual links only."
+    }
+  ]
+}
