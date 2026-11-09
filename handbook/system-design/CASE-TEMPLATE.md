@@ -42,6 +42,9 @@ Cover outages, overload, retries, duplicates, timeouts, data corruption and reco
 ## Security and threat model
 Assets, trust boundaries, abuse scenarios, controls, residual risk.
 
+## Code architecture and design patterns
+Specify the application structure (MVC/layered, Clean, Hexagonal, vertical slices, etc.), domain boundaries, dependency direction, selected design patterns, and reasons for each. Explain which patterns were rejected and why. See [Architecture-to-Code PoC Framework](ARCHITECTURE-TO-CODE.md).
+
 ## PoC plan
 Repository/path, setup commands, tests, expected evidence.
 
