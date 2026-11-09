@@ -10,9 +10,20 @@ from .core import connect, ingest_feed, list_items, store
 from .learning import recommendations, markdown_digest
 from .sources import load_registry, fetch_all
 
+def default_db() -> str:
+    """Prefer existing V1 DB; new installs use project/data independent of CWD."""
+    project = Path(__file__).resolve().parents[2]
+    legacy = project / "learning-intelligence" / "data" / "eli.sqlite3"
+    if legacy.is_file():
+        return str(legacy)
+    return str(project / "data" / "eli.sqlite3")
+
+def default_sources() -> str:
+    return str(Path(__file__).resolve().parents[2] / "config" / "sources.example.json")
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="eli", description="Engineering Learning Intelligence v1")
-    parser.add_argument("--db", default=os.getenv("ELI_DB", "learning-intelligence/data/eli.sqlite3"))
+    parser.add_argument("--db", default=os.getenv("ELI_DB") or default_db())
     commands = parser.add_subparsers(dest="command", required=True)
     manual = commands.add_parser("add-url", help="Save a manually reviewed public URL (no fetching)")
     manual.add_argument("url")
@@ -27,7 +38,7 @@ def main(argv=None) -> int:
     digest.add_argument("--limit", type=int, default=20)
     digest.add_argument("--output", help="Write Markdown to this file instead of stdout")
     multi = commands.add_parser("fetch-all", help="Import from reviewed and enabled registry feeds")
-    multi.add_argument("--sources", default="config/sources.example.json", help="Source registry JSON")
+    multi.add_argument("--sources", default=default_sources(), help="Source registry JSON")
     source_list = commands.add_parser("sources", help="Show registry sources and their status")
     source_list.add_argument("--sources", default="config/sources.example.json", help="Source registry JSON")
     args = parser.parse_args(argv)
