@@ -108,3 +108,23 @@ Keep local registry modifications out of version control if they contain persona
 - `eli digest` includes newly ingested topics.
 
 Live feed availability and GitHub Actions results must be verified independently; the code commit alone does not prove successful external ingestion.
+
+## V1 completion checklist and first System Design source
+
+**Path behavior:** The default DB is now `learning-intelligence/data/eli.sqlite3` regardless of your shell's current directory. If the previous V1 nested DB exists at `learning-intelligence/learning-intelligence/data/eli.sqlite3`, ELI continues using it automatically. Explicit `--db PATH` and `ELI_DB` override this. Default source-registry lookup also works independently of your current directory.
+
+From the `learning-intelligence` folder, without needing to activate the virtual environment:
+
+```bash
+./.venv/bin/python -m pytest -q
+./.venv/bin/eli sources
+./.venv/bin/eli fetch-all
+./.venv/bin/eli add-url 'https://www.linkedin.com/posts/nk-systemdesign-one_if-you-want-to-become-god-level-at-system-share-7517932711509106688-Pz78/' --title 'System design study inspiration' --source 'LinkedIn (user-shared)'
+./.venv/bin/eli digest --limit 20 --output output/weekly-review.md
+```
+
+The LinkedIn link is **user-supplied inspiration**, not verified post content; ELI saves the URL and your descriptive title only. Read the [System Design Case Lab](../handbook/system-design/README.md) and [case template](../handbook/system-design/CASE-TEMPLATE.md) to turn selected research into architecture exercises.
+
+**Definition of done for V1:** offline tests pass locally and in CI; manual imports are persistent and idempotent; digest generation works; default source registry safely skips unreviewed feeds; at least one *independently verified and permitted* publisher feed has been ingested and deduplicated twice before claiming live ingestion validated. Do not claim live-source completion from skipped-source output.
+
+**Known limitations:** no article-body ingestion, scheduled polling, LLM analysis, distributed processing, or feed-health dashboard. Source approval and human review are deliberate. These belong to future milestones, not V1 acceptance.
