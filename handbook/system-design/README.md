@@ -1,6 +1,6 @@
 # System Design Case Lab — V1
 
-The case lab turns engineering learning into evidence-based architecture practice. Inspired by a user-shared [LinkedIn system design post](https://www.linkedin.com/posts/nk-systemdesign-one_if-you-want-to-become-god-level-at-system-share-7517932711509106688-Pz78/). The post content has **not** been independently retrieved or verified; the cases below are our own proposed curriculum, not a reproduction of that post.
+The case lab turns engineering learning into evidence-based architecture practice. Inspired by a user-shared [LinkedIn system design post](https://www.linkedin.com/posts/nk-systemdesign-one_if-you-want-to-become-god-level-at-system-share-7517932711509106688-Pz78/). The user has now supplied a screenshot listing twelve named cases and five direct newsletter links. See [Real-world architecture case catalog](REAL-WORLD-CASES.md). The linked articles have not yet been independently reviewed, and the list below remains our separate hands-on lab curriculum.
 
 ## Study contract
 
@@ -17,7 +17,12 @@ For every case, use **Read → Understand → Challenge → Design → Implement
 
 **Rule:** no Kafka, Kubernetes, CQRS, event sourcing, Redis, sharding or microservices merely because the case is called "system design." Each choice must address a measured constraint.
 
-## Case progression
+## Two complementary tracks
+
+- **Real-world architecture case studies:** examine how complex products and infrastructure are described in engineering writeups; separate published facts from educational hypotheses.
+- **Hands-on system design labs:** implement smaller, measurable versions of their underlying architectural problems. The same case may involve multiple labs.
+
+## Hands-on lab progression
 
 | Level | Case | Core decisions | First measurable lab |
 |---|---|---|---|
@@ -34,7 +39,7 @@ For every case, use **Read → Understand → Challenge → Design → Implement
 | 4 | Global chat | ordering, offline delivery, presence, partitioning | multi-client delivery and recovery tests |
 | 4 | Video platform | upload pipeline, transcoding, CDN, cost | mock media workflow + throughput/cost model |
 
-Start with **URL shortener**, **rate limiter**, then **event ingestion/metrics**. The third case can connect to the GitHub webhook metrics architecture already under discussion.
+Start with **URL shortener**, **rate limiter**, then **event ingestion/metrics** for foundational practice. In parallel, read the **Kafka**, **YouTube**, **Google Docs**, **WhatsApp** and **Airbnb** case studies from the real-world catalog. These are not claims that we can reproduce their entire production systems. The third case can connect to the GitHub webhook metrics architecture already under discussion.
 
 ## Case template
 
