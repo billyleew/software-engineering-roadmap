@@ -1,6 +1,5 @@
 """PostgreSQL adapter: atomic deduplication, leases, retry and projections."""
 from __future__ import annotations
-import json
 import psycopg
 from psycopg.rows import dict_row
 from .domain import validate_event
@@ -48,7 +47,7 @@ class InboxStore:
             return row is not None
 
     def process_one(self, *, max_attempts: int = 3, lease_seconds: int = 30,
-                    inject_failure: bool = False) -> dict | None:
+                    inject_failure: bool = False, delivery_id: str | None = None) -> dict | None:
         """One transaction claims, projects and acknowledges an event.
 
         A crash before commit rolls back both projection and acknowledgement.
@@ -59,10 +58,11 @@ class InboxStore:
         with self.connect() as conn:
             row = conn.execute(
                 """SELECT id, delivery_id, payload, attempts FROM inbox_events
-                   WHERE (status='pending' AND available_at<=NOW())
-                      OR (status='processing' AND leased_until<=NOW())
-                   ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1"""
-            ).fetchone()
+                   WHERE ((status='pending' AND available_at<=NOW())
+                      OR (status='processing' AND leased_until<=NOW()))
+                     AND (%s IS NULL OR delivery_id=%s)
+                   ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1""",
+                (delivery_id, delivery_id)).fetchone()
             if row is None:
                 return None
             # The processing state and projection are in the same transaction.
@@ -70,26 +70,18 @@ class InboxStore:
                 """UPDATE inbox_events SET status='processing', attempts=attempts+1,
                    leased_until=NOW()+(%s * INTERVAL '1 second') WHERE id=%s""",
                 (lease_seconds, row["id"]))
-            try:
-                kind = row["payload"]["kind"]
-                if not isinstance(kind, str) or not kind:
-                    raise ValueError("kind must be nonempty")
-                conn.execute(
-                    """INSERT INTO kind_counts(kind,total) VALUES (%s,1)
-                       ON CONFLICT(kind) DO UPDATE SET total=kind_counts.total+1""",
-                    (kind,))
-                if inject_failure:
-                    raise RuntimeError("injected failure before commit")
-                conn.execute(
-                    """UPDATE inbox_events SET status='processed', processed_at=NOW(),
-                       leased_until=NULL, last_error=NULL WHERE id=%s""", (row["id"],))
-                return {"delivery_id": row["delivery_id"], "status": "processed"}
-            except (ValueError, RuntimeError) as exc:
-                # Use a savepoint so a future adapter/database error does not
-                # leave a half-applied projection in this transaction.
-                # The injected error occurs after projection: transaction rollback
-                # must prevent double-counting. Re-raise and do not ack.
-                raise
+            if not isinstance(kind, str) or not kind:
+                raise ValueError("kind must be nonempty")
+            conn.execute(
+                """INSERT INTO kind_counts(kind,total) VALUES (%s,1)
+                   ON CONFLICT(kind) DO UPDATE SET total=kind_counts.total+1""",
+                (kind,))
+            if inject_failure:
+                raise RuntimeError("injected failure before commit")
+            conn.execute(
+                """UPDATE inbox_events SET status='processed', processed_at=NOW(),
+                   leased_until=NULL, last_error=NULL WHERE id=%s""", (row["id"],))
+            return {"delivery_id": row["delivery_id"], "status": "processed"}
 
     def fail_one(self, delivery_id: str, *, max_attempts: int = 3) -> str:
         """Mark an invalid event for bounded retry/dead-letter inspection."""
