@@ -56,13 +56,15 @@ class InboxStore:
         if max_attempts < 1 or lease_seconds < 1:
             raise ValueError("positive max_attempts and lease_seconds required")
         with self.connect() as conn:
-            row = conn.execute(
-                """SELECT id, delivery_id, payload, attempts FROM inbox_events
-                   WHERE ((status='pending' AND available_at<=NOW())
-                      OR (status='processing' AND leased_until<=NOW()))
-                     AND (%s IS NULL OR delivery_id=%s)
-                   ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1""",
-                (delivery_id, delivery_id)).fetchone()
+            query = """SELECT id, delivery_id, payload, attempts FROM inbox_events
+                       WHERE ((status='pending' AND available_at<=NOW())
+                          OR (status='processing' AND leased_until<=NOW()))"""
+            params = ()
+            if delivery_id is not None:
+                query += " AND delivery_id=%s"
+                params = (delivery_id,)
+            query += " ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1"
+            row = conn.execute(query, params).fetchone()
             if row is None:
                 return None
             # The processing state and projection are in the same transaction.
@@ -70,6 +72,7 @@ class InboxStore:
                 """UPDATE inbox_events SET status='processing', attempts=attempts+1,
                    leased_until=NOW()+(%s * INTERVAL '1 second') WHERE id=%s""",
                 (lease_seconds, row["id"]))
+            kind = row["payload"].get("kind")
             if not isinstance(kind, str) or not kind:
                 raise ValueError("kind must be nonempty")
             conn.execute(
