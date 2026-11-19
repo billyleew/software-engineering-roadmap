@@ -19,7 +19,7 @@ def test_dedup_projection_and_crash_rollback(store):
     assert store.submit(key, {"kind": kind})
     assert not store.submit(key, {"kind": kind})
     with pytest.raises(RuntimeError, match="injected"):
-        store.process_one(inject_failure=True)
+        store.process_one(inject_failure=True, delivery_id=key)
     assert kind not in store.summary()["kinds"]
-    assert store.process_one() == {"delivery_id": key, "status": "processed"}
+    assert store.process_one(delivery_id=key) == {"delivery_id": key, "status": "processed"}
     assert store.summary()["kinds"][kind] == 1
