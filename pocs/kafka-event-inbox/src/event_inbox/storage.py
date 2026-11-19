@@ -86,6 +86,52 @@ class InboxStore:
                    leased_until=NULL, last_error=NULL WHERE id=%s""", (row["id"],))
             return {"delivery_id": row["delivery_id"], "status": "processed"}
 
+    def work_one(self, *, max_attempts: int = 3, delivery_id: str | None = None) -> dict | None:
+        """Process an event; persist retry/dead state on domain processing failure.
+
+        Database/connection errors propagate rather than being mistaken for poison
+        messages. All projection writes and status changes share a transaction.
+        """
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be positive")
+        with self.connect() as conn:
+            query = """SELECT id, delivery_id, payload, attempts FROM inbox_events
+                       WHERE status='pending' AND available_at<=NOW()"""
+            params = ()
+            if delivery_id is not None:
+                query += " AND delivery_id=%s"
+                params = (delivery_id,)
+            query += " ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1"
+            row = conn.execute(query, params).fetchone()
+            if row is None:
+                return None
+            kind = row["payload"].get("kind")
+            attempt = row["attempts"] + 1
+            if not isinstance(kind, str) or not kind:
+                status = "dead" if attempt >= max_attempts else "pending"
+                conn.execute(
+                    """UPDATE inbox_events SET status=%s, attempts=%s,
+                       available_at=NOW()+(%s * INTERVAL '1 second'),
+                       last_error=%s WHERE id=%s""",
+                    (status, attempt, min(2 ** attempt, 60), "invalid kind", row["id"]))
+                return {"delivery_id": row["delivery_id"], "status": status, "attempts": attempt}
+            conn.execute(
+                """INSERT INTO kind_counts(kind,total) VALUES (%s,1)
+                   ON CONFLICT(kind) DO UPDATE SET total=kind_counts.total+1""", (kind,))
+            conn.execute(
+                """UPDATE inbox_events SET status='processed', attempts=%s,
+                   processed_at=NOW(), leased_until=NULL, last_error=NULL WHERE id=%s""",
+                (attempt, row["id"]))
+            return {"delivery_id": row["delivery_id"], "status": "processed", "attempts": attempt}
+
+    def dead_letters(self, *, limit: int = 100) -> list[dict]:
+        if not 1 <= limit <= 1000:
+            raise ValueError("limit must be 1..1000")
+        with self.connect() as conn:
+            return conn.execute(
+                """SELECT delivery_id, attempts, last_error FROM inbox_events
+                   WHERE status='dead' ORDER BY id LIMIT %s""", (limit,)).fetchall()
+
     def fail_one(self, delivery_id: str, *, max_attempts: int = 3) -> str:
         """Mark an invalid event for bounded retry/dead-letter inspection."""
         with self.connect() as conn:
