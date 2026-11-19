@@ -22,6 +22,13 @@ def main(argv=None):
     fail = sub.add_parser("fail")
     fail.add_argument("delivery_id")
     sub.add_parser("summary")
+    sub.add_parser("dead")
+    serve = sub.add_parser("serve")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8081)
+    run = sub.add_parser("run-worker")
+    run.add_argument("--count", type=int, default=1)
+    run.add_argument("--delivery-id")
     args = parser.parse_args(argv)
     store = InboxStore(args.dsn)
     try:
@@ -37,6 +44,16 @@ def main(argv=None):
                       for _ in range(args.count)]
         elif args.command == "fail":
             result = {"status": store.fail_one(args.delivery_id)}
+        elif args.command == "dead":
+            result = store.dead_letters()
+        elif args.command == "serve":
+            from .http import serve
+            serve(store, host=args.host, port=args.port)
+            return 0
+        elif args.command == "run-worker":
+            if not 1 <= args.count <= 10000:
+                raise ValueError("count must be 1..10000")
+            result = [store.work_one(delivery_id=args.delivery_id) for _ in range(args.count)]
         else:
             result = store.summary()
         print(json.dumps(result, indent=2))
