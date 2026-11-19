@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: inbox
+      POSTGRES_PASSWORD: local_dev_only
+      POSTGRES_DB: inbox
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inbox -d inbox"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    volumes:
+      - inbox_pgdata:/var/lib/postgresql/data
+volumes:
+  inbox_pgdata:
