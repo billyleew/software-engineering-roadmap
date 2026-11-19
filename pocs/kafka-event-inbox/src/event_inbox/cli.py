@@ -18,6 +18,7 @@ def main(argv=None):
     work = sub.add_parser("work")
     work.add_argument("--count", type=int, default=1)
     work.add_argument("--inject-failure", action="store_true")
+    work.add_argument("--delivery-id", help="Process only this delivery ID (testing)")
     fail = sub.add_parser("fail")
     fail.add_argument("delivery_id")
     sub.add_parser("summary")
@@ -32,7 +33,7 @@ def main(argv=None):
         elif args.command == "work":
             if not 1 <= args.count <= 10000:
                 raise ValueError("count must be 1..10000")
-            result = [store.process_one(inject_failure=args.inject_failure)
+            result = [store.process_one(inject_failure=args.inject_failure, delivery_id=args.delivery_id)
                       for _ in range(args.count)]
         elif args.command == "fail":
             result = {"status": store.fail_one(args.delivery_id)}
@@ -40,7 +41,7 @@ def main(argv=None):
             result = store.summary()
         print(json.dumps(result, indent=2))
         return 0
-    except (ValueError, RuntimeError, Exception) as exc:
+    except Exception as exc:
         print(f"inbox: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
 
